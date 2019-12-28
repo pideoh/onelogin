@@ -56,7 +56,7 @@ func (s *SamlResponse) SetSamlString(saml string) {
 	s.SamlString = saml
 }
 
-func (s *SAMLService) SamlAssertion(ctx context.Context, username, password, appID string) (*MFAResponse, error) {
+func (s *SAMLService) SamlAssertion(ctx context.Context, username, password, appID string) (string, error) {
 	u := "/api/1/saml_assertion"
 	a := stateTokenParams{
 		Username:  username,
@@ -65,28 +65,7 @@ func (s *SAMLService) SamlAssertion(ctx context.Context, username, password, app
 		Subdomain: s.client.subdomain}
 
 	req, err := s.client.NewRequest("POST", u, a)
-	mfaResponse := []MFAResponse{}
-	if err != nil {
-		return nil, err
-	}
-
-	if err := s.client.AddAuthorization(ctx, req); err != nil {
-		return nil, err
-	}
-	if _, err := s.client.Do(ctx, req, &mfaResponse); err != nil {
-		return nil, err
-	}
-	return &mfaResponse[0], nil
-}
-
-func (s *SAMLService) VerifyFactor(ctx context.Context, otp, stateToken, appId, deviceId string) (string, error) {
-	u := "/api/1/saml_assertion/verify_factor"
-	a := samlRequestParams{
-		OtpToken:   otp,
-		DeviceID:   deviceId,
-		AppID:      appId,
-		StateToken: stateToken}
-	req, err := s.client.NewRequest("POST", u, a)
+	samlResponse := SamlResponse{}
 	if err != nil {
 		return "", err
 	}
@@ -94,11 +73,8 @@ func (s *SAMLService) VerifyFactor(ctx context.Context, otp, stateToken, appId, 
 	if err := s.client.AddAuthorization(ctx, req); err != nil {
 		return "", err
 	}
-	samlResponse := &SamlResponse{}
-	if _, err := s.client.Do(ctx, req, samlResponse); err != nil {
+	if _, err := s.client.Do(ctx, req, &samlResponse); err != nil {
 		return "", err
 	}
-	// Need to remove the double quote artifact from converting a json.RawMessage
-	//  into a Go string
 	return strings.Trim(samlResponse.SamlString, "\""), nil
 }

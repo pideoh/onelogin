@@ -1,4 +1,4 @@
-module github.com/rnikoopour/onelogin
+module github.com/pideoh/onelogin
 
 require (
 	github.com/google/go-querystring v1.0.0
